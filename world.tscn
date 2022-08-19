@@ -1,0 +1,62 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://world.gd" type="Script" id=1]
+[ext_resource path="res://asset/texture/bg.jpg" type="Texture" id=2]
+
+[sub_resource type="Shader" id=1]
+code = "shader_type canvas_item;
+
+vec3 rgb2hsv(vec3 c)
+{
+    vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+    vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+    vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+
+    float d = q.x - min(q.w, q.y);
+    float e = 1.0e-10;
+    return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
+
+vec3 hsv2rgb(vec3 c)
+{
+    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
+float r(float v, float f, float t) {
+	return (v - f) / (t - f);
+}
+
+uniform float speed = 10.0;
+uniform float waves = 60.0;
+uniform float rand = 1.0;
+
+void fragment() {
+	vec2 uv = SCREEN_UV;
+	uv.x -= r(sin(uv.y * waves - (TIME * speed)), -waves, waves) - 0.5;
+	uv.y += r(sin(uv.x * waves - (TIME * speed)), -waves, waves) - 0.5;
+	
+	vec3 col = texture(SCREEN_TEXTURE, SCREEN_UV).rgb;
+	vec3 hsv = rgb2hsv(col);
+	vec3 rgb = hsv2rgb(vec3(TIME * 5.0 * rand, 1.0, hsv.b));
+	COLOR.rgb = rgb;
+}"
+
+[sub_resource type="ShaderMaterial" id=2]
+shader = SubResource( 1 )
+shader_param/speed = 10.0
+shader_param/waves = 60.0
+shader_param/rand = 1.0
+
+[node name="world" type="TextureRect"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+rect_pivot_offset = Vector2( 256, 256 )
+texture = ExtResource( 2 )
+script = ExtResource( 1 )
+
+[node name="fuck" type="ColorRect" parent="."]
+material = SubResource( 2 )
+anchor_right = 1.0
+anchor_bottom = 1.0
